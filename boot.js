@@ -72,6 +72,7 @@
     var q = 0; try { q = parseFloat(new URLSearchParams(location.search).get('dpr')) || 0; } catch (e) { }
     cfg.devicePixelRatio = q > 0 ? q : Math.min(dpr, 1.25);          // выше 1,25 кадры заметно дороже, а картинка почти не выигрывает
     cfg.matchWebGLToCanvasSize = true;
+    window.ZASLON_BASE_DPR = cfg.devicePixelRatio;                  // база для адаптивного разрешения (игра умножает её на 0,55…1)
 
     loadText.textContent = 'Загрузка…';
     var script = document.createElement('script');
@@ -92,6 +93,12 @@
     };
     document.body.appendChild(script);
   }
+
+  // Сервис-воркер: установка как приложение и запуск без сети. Только по https (на localhost и в приложении для Android он не нужен)
+  try {
+    if ('serviceWorker' in navigator && location.protocol === 'https:' && !/ZaslonApp\//.test(navigator.userAgent) && location.hostname !== 'appassets.androidplatform.net')
+      navigator.serviceWorker.register('sw.js').catch(function () { });
+  } catch (e) { }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

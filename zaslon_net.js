@@ -362,11 +362,13 @@
     queueLength: function () { return Q.length; },
     _push: push, _toU8: toU8,
     copyText: function (s) {
+      try { if (root.ZaslonAndroid && root.ZaslonAndroid.copy) { root.ZaslonAndroid.copy(String(s)); return; } } catch (e) { }
       try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(s); return; } } catch (e) { }
       var ta = document.createElement('textarea'); ta.value = s; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
       try { document.execCommand('copy'); } catch (e) { } ta.remove();
     },
     share: function (title, url) {
+      try { if (root.ZaslonAndroid && root.ZaslonAndroid.share) { root.ZaslonAndroid.share(String(title), String(url)); return; } } catch (e) { }
       if (navigator.share) { navigator.share({ title: title, url: url }).catch(function () { }); }
       else api.copyText(url);
     },
@@ -383,7 +385,7 @@
         else (document.exitFullscreen || document.webkitExitFullscreen || function () { }).call(document);
       } catch (e) { }
     },
-    vibrate: function (ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { } },
+    vibrate: function (ms) { try { if (root.ZaslonAndroid && root.ZaslonAndroid.vibrate) { root.ZaslonAndroid.vibrate(ms); return; } if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { } },
     // Мышь. mouseWant(true) — «в бою хотим захват»: он случится при ближайшем клике по игре; mouseWant(false) — отпустить.
     mouseWant: function (on) {
       M.want = !!on;
@@ -391,6 +393,20 @@
       if (on && !M.locked) { try { if (navigator.userActivation && navigator.userActivation.isActive) lockNow(); } catch (e) { } }
       if (!on && M.locked) { M.exiting = true; try { document.exitPointerLock(); } catch (e) { } }
       if (!on) { M.dx = M.dy = 0; }
+    },
+    // Запущено в приложении для Android (оно добавляет метку ZaslonApp в User-Agent)
+    isApp: function () { return /ZaslonApp\//.test(navigator.userAgent); },
+    quit: function () { try { if (root.ZaslonAndroid && root.ZaslonAndroid.quit) root.ZaslonAndroid.quit(); else root.close(); } catch (e) { } },
+    // Адрес для приглашений: из приложения — адрес игры в интернете (внутренний адрес приложения друзьям не открыть)
+    publicUrl: function () {
+      if (api.isApp()) return 'https://3forwork11235.github.io/zaslon/';
+      return String(location.href).split(/[?#]/)[0];
+    },
+    // Кнопка «назад» телефона: как нажатие Esc (Unity опрашивает клавиши раз в кадр, поэтому «отпускание» чуть позже)
+    androidBack: function () {
+      var c = gameCanvas() || document.body;
+      var ev = function (t) { return new KeyboardEvent(t, { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }); };
+      try { c.dispatchEvent(ev('keydown')); setTimeout(function () { try { c.dispatchEvent(ev('keyup')); } catch (e) { } }, 90); } catch (e) { }
     },
     mouseLocked: function () { return M.locked; },
     mouseLostLock: function () { var v = M.lostLock; M.lostLock = false; return v; },
