@@ -70,7 +70,7 @@
     // на телефонах рисуем в меньшем разрешении: так заметно плавнее
     var dpr = window.devicePixelRatio || 1;
     var q = 0; try { q = parseFloat(new URLSearchParams(location.search).get('dpr')) || 0; } catch (e) { }
-    cfg.devicePixelRatio = q > 0 ? q : (isMobile() ? Math.min(dpr, 1.5) : Math.min(dpr, 2));
+    cfg.devicePixelRatio = q > 0 ? q : Math.min(dpr, 1.25);          // выше 1,25 кадры заметно дороже, а картинка почти не выигрывает
     cfg.matchWebGLToCanvasSize = true;
 
     loadText.textContent = 'Загрузка…';

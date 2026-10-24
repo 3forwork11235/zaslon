@@ -387,6 +387,8 @@
     // Мышь. mouseWant(true) — «в бою хотим захват»: он случится при ближайшем клике по игре; mouseWant(false) — отпустить.
     mouseWant: function (on) {
       M.want = !!on;
+      // Если игрок только что кликнул (например, «Продолжить»), активация пользователя ещё жива — захватываем сразу, без второго клика
+      if (on && !M.locked) { try { if (navigator.userActivation && navigator.userActivation.isActive) lockNow(); } catch (e) { } }
       if (!on && M.locked) { M.exiting = true; try { document.exitPointerLock(); } catch (e) { } }
       if (!on) { M.dx = M.dy = 0; }
     },
