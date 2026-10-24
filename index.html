@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0e13">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Заслон — тактический 3D-шутер: 10 видов оружия, 6 карт, кампания, боты и онлайн по ссылке.">
+  <title>Заслон</title>
+  <link rel="stylesheet" href="zaslon.css">
+</head>
+<body>
+  <div id="stage"><canvas id="unity-canvas" tabindex="-1"></canvas></div>
+
+  <div id="loader">
+    <div class="brand">
+      <div class="mark"><span></span><span></span><span></span></div>
+      <h1>ЗАСЛОН</h1>
+      <p class="tag">тактический шутер · 10 видов оружия · 6 карт · онлайн</p>
+    </div>
+    <div class="bar"><div id="bar-fill"></div></div>
+    <p id="load-text">Загрузка…</p>
+    <p class="hint">WASD — бег · мышь — обзор · ЛКМ — огонь · ПКМ — прицел · Shift — спринт · C — присесть · Q/E — наклон · R — перезарядка · V — нож · Tab — счёт</p>
+  </div>
+
+  <div id="fail" hidden>
+    <h2>Не удалось запустить игру</h2>
+    <p id="fail-text"></p>
+    <button id="fail-reload" type="button">Перезагрузить</button>
+  </div>
+
+  <div id="rotate" hidden><div class="phone"></div><p>Поверните устройство горизонтально</p></div>
+  <div id="toast" hidden></div>
+
+  <script>
+    // Параметры сборки подставляет Unity при публикации
+    window.ZASLON_BUILD = {
+      loaderUrl: "Build/WebGL.loader.js",
+      config: {
+        arguments: [],
+        dataUrl: "Build/WebGL.data",
+        frameworkUrl: "Build/WebGL.framework.js",
+        codeUrl: "Build/WebGL.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "Zaslon",
+        productName: "Заслон",
+        productVersion: "1.0"
+      }
+    };
+  </script>
+  <script src="zaslon_net.js"></script>
+  <script src="boot.js"></script>
+</body>
+</html>
