@@ -311,6 +311,33 @@
     if (!document.hidden) { if (G.cur && G.cur.chosen) keepAwake(); if (H.peer && H.peer.disconnected && !H.peer.destroyed) { try { H.peer.reconnect(); } catch (e) { } } }
   });
 
+  // ---------------------------------------------------------------- мышь
+  // Свой захват указателя: Cursor.lockState в WebGL ненадёжен — Unity не всегда узнаёт, что браузер снял захват по Esc,
+  // после чего положение курсора «замирает» и кнопки меню не нажимаются. Здесь: захват внутри клика (требование браузера),
+  // точные приращения movementX/Y (без ускорения ОС, если браузер умеет) и флаг «захват потерян» — это и есть нажатие Esc в бою.
+  var M = { inited: false, want: false, locked: false, exiting: false, lostLock: false, dx: 0, dy: 0 };
+  function gameCanvas() { return document.getElementById('unity-canvas') || document.querySelector('canvas'); }
+  function lockNow() {
+    var c = gameCanvas(); if (!c || !c.requestPointerLock) return;
+    try {
+      var p = c.requestPointerLock({ unadjustedMovement: true });
+      if (p && p.catch) p.catch(function () { try { var q = c.requestPointerLock(); if (q && q.catch) q.catch(function () { }); } catch (e) { } });
+    } catch (e) { try { c.requestPointerLock(); } catch (e2) { } }
+  }
+  function mouseInit() {
+    if (M.inited) return; M.inited = true;
+    document.addEventListener('pointerlockchange', function () {
+      var was = M.locked; M.locked = !!document.pointerLockElement;
+      if (was && !M.locked) { if (!M.exiting) M.lostLock = true; M.exiting = false; M.dx = M.dy = 0; }
+    });
+    document.addEventListener('mousemove', function (e) { if (M.locked) { M.dx += e.movementX || 0; M.dy += e.movementY || 0; } }, true);
+    document.addEventListener('mousedown', function (e) {
+      var c = gameCanvas();
+      if (M.want && !M.locked && c && (e.target === c)) lockNow();
+    }, true);
+  }
+  mouseInit();
+
   // ---------------------------------------------------------------- Unity
   var api = {
     version: 1,
@@ -357,6 +384,15 @@
       } catch (e) { }
     },
     vibrate: function (ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { } },
+    // Мышь. mouseWant(true) — «в бою хотим захват»: он случится при ближайшем клике по игре; mouseWant(false) — отпустить.
+    mouseWant: function (on) {
+      M.want = !!on;
+      if (!on && M.locked) { M.exiting = true; try { document.exitPointerLock(); } catch (e) { } }
+      if (!on) { M.dx = M.dy = 0; }
+    },
+    mouseLocked: function () { return M.locked; },
+    mouseLostLock: function () { var v = M.lostLock; M.lostLock = false; return v; },
+    mouseTake: function () { var r = [M.dx, M.dy]; M.dx = 0; M.dy = 0; return r; },
   };
   root.ZaslonNet = api;
 })(typeof window !== 'undefined' ? window : globalThis);
