@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="utf-8">
@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="zaslon.css">
+  <link rel="stylesheet" href="zaslon.css?v=20261025150914">
 </head>
 <body>
   <div id="stage"><canvas id="unity-canvas" tabindex="-1"></canvas></div>
@@ -26,6 +26,7 @@
     </div>
     <div class="bar"><div id="bar-fill"></div></div>
     <p id="load-text">Загрузка…</p>
+    <p id="ver" class="ver"></p>
     <p class="hint">WASD — бег · мышь — обзор · ЛКМ — огонь · ПКМ — прицел · Shift — спринт · C — присесть · Q/E — наклон · R — перезарядка · V — нож · Tab — счёт</p>
   </div>
 
@@ -54,7 +55,7 @@
       }
     };
   </script>
-  <script src="zaslon_net.js"></script>
-  <script src="boot.js"></script>
+  <script src="zaslon_net.js?v=20261025150914"></script>
+  <script src="boot.js?v=20261025150914"></script>
 </body>
 </html>

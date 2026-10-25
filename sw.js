@@ -1,6 +1,7 @@
 ﻿// «Заслон» — сервис-воркер: игру можно поставить как приложение (ПК, телефон) и запускать без сети (бой с ботами).
-// Файлы сборки (Build/…) кладём в кэш под меткой сборки — её подставляет скрипт сборки вместо 20261025124920; остальное берём из сети, а без сети — из кэша.
-const BUILD = '20261025124920';
+// Файлы сборки (Build/…) кладём в кэш под меткой сборки — её подставляет скрипт сборки вместо 20261025150914. Адреса этих файлов несут ту же метку (?v=…),
+// поэтому после обновления игры старый кэш не может подменить новую версию. Страницу и скрипты берём из сети с проверкой свежести, без сети — из кэша.
+const BUILD = '20261025150914';
 const CACHE = 'zaslon-' + BUILD;
 
 self.addEventListener('install', function () { self.skipWaiting(); });
@@ -19,7 +20,7 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(req.url);
   if (url.origin !== location.origin) return;                       // сигнальные серверы, PeerJS, MQTT — не трогаем
   if (url.pathname.indexOf('/Build/') >= 0) {
-    // тяжёлые файлы: из кэша; при первом запуске скачиваем и сохраняем
+    // тяжёлые файлы: из кэша; при первом запуске скачиваем и сохраняем. Ключ — полный адрес вместе с ?v=метка сборки
     e.respondWith(caches.open(CACHE).then(function (c) {
       return c.match(req).then(function (hit) {
         if (hit) return hit;
@@ -28,8 +29,9 @@ self.addEventListener('fetch', function (e) {
     }));
     return;
   }
+  // страница, скрипты, стили: всегда сверяем с сервером (иначе браузер мог отдать копию, которой до 10 минут), без сети — из кэша
   e.respondWith(
-    fetch(req).then(function (res) {
+    fetch(req, { cache: 'no-cache' }).then(function (res) {
       if (res && res.status === 200) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
       return res;
     }).catch(function () { return caches.match(req, { ignoreSearch: true }); })

@@ -44,6 +44,7 @@ html, body {
 #bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), #ffd36b); transition: width .15s linear; }
 #load-text { margin: 0; color: var(--dim); font-size: 14px; letter-spacing: .06em; min-height: 1.2em; }
 .hint { margin: 10px 0 0; max-width: 640px; text-align: center; color: #5d6c7d; font-size: 12px; line-height: 1.6; }
+.ver { margin: 6px 0 0; text-align: center; color: #3f93b8; font-size: 12px; letter-spacing: .06em; }
 
 #fail {
   position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;

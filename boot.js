@@ -1,10 +1,14 @@
-// «Заслон» — запуск WebGL-сборки: полоса загрузки, проверка WebGL2, подсказка про поворот экрана, обработка ошибок.
+﻿// «Заслон» — запуск WebGL-сборки: полоса загрузки, проверка WebGL2, подсказка про поворот экрана, обработка ошибок.
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var loader = $('loader'), barFill = $('bar-fill'), loadText = $('load-text');
   var failBox = $('fail'), failText = $('fail-text'), rotateBox = $('rotate'), toast = $('toast');
   var canvas = $('unity-canvas');
+  // Метка сборки подставляется при публикации. Ею помечаем адреса тяжёлых файлов (?v=…): после обновления браузер и сервис-воркер не могут
+  // отдать старую игру из кэша по старому адресу — новый адрес в кэше ещё не лежит и качается заново.
+  var BUILD = '20261025150914';
+  function ver(u) { return BUILD.indexOf('__') === 0 || !u ? u : u + (u.indexOf('?') < 0 ? '?' : '&') + 'v=' + BUILD; }
 
   // Ограничитель частоты кадров. Unity в браузере рисует кадр на каждый кадр экрана, а на телефонах и мониторах с 90–144 Гц это лишний нагрев
   // и 100% видеокарты. Игра выставляет предел (window.ZASLON_MAXFPS, 0 — без предела). Следующий кадр главного цикла ждёт по таймеру до нужного
@@ -67,6 +71,24 @@
   }
   $('fail-reload').addEventListener('click', function () { location.reload(); });
 
+  // Метка сборки на заставке: сразу видно, какая версия игры запущена (метка = дата и время сборки)
+  (function () {
+    var v = $('ver');
+    if (!v || BUILD.indexOf('__') === 0 || BUILD.length < 12) return;
+    v.textContent = 'сборка от ' + BUILD.substr(6, 2) + '.' + BUILD.substr(4, 2) + '.' + BUILD.substr(0, 4) + ' ' + BUILD.substr(8, 2) + ':' + BUILD.substr(10, 2);
+  })();
+  // Приложение (окно Chrome/Edge) могло открыться из кэша старой версии: если появилась новая, перезапускаемся один раз сами
+  try {
+    if ('serviceWorker' in navigator) {
+      var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!hadController || reloaded) return;          // первая установка перезагрузки не требует
+        reloaded = true;
+        if (!started || loader.style.display !== 'none') { try { location.reload(); } catch (e) { } }      // игра ещё грузится — обновляемся тут же; во время боя не трогаем
+      });
+    }
+  } catch (e) { }
+
   // Поворот экрана: игра рассчитана на горизонтальное положение
   function checkOrientation() {
     var portrait = window.innerHeight > window.innerWidth * 1.05;
@@ -109,6 +131,7 @@
       return;
     }
     var cfg = B.config;
+    ['dataUrl', 'frameworkUrl', 'codeUrl', 'memoryUrl', 'symbolsUrl', 'workerUrl'].forEach(function (k) { if (cfg[k]) cfg[k] = ver(cfg[k]); });
     cfg.showBanner = function (msg, type) {
       if (type === 'error') { try { console.error(msg); } catch (e) { } fail(msg); }
       else { try { console.warn(msg); } catch (e) { } say(msg); }
@@ -124,7 +147,7 @@
 
     loadText.textContent = 'Загрузка…';
     var script = document.createElement('script');
-    script.src = B.loaderUrl;
+    script.src = ver(B.loaderUrl);
     script.onerror = function () { fail('Не найден загрузчик игры (' + B.loaderUrl + '). Откройте страницу через веб-сервер из папки сборки.'); };
     script.onload = function () {
       window.createUnityInstance(canvas, cfg, function (p) {
@@ -145,7 +168,7 @@
   // Сервис-воркер: установка как приложение и запуск без сети. Только по https (на localhost и в приложении для Android он не нужен)
   try {
     if ('serviceWorker' in navigator && location.protocol === 'https:' && !/ZaslonApp\//.test(navigator.userAgent) && location.hostname !== 'appassets.androidplatform.net')
-      navigator.serviceWorker.register('sw.js').catch(function () { });
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) { try { reg.update(); } catch (e) { } }).catch(function () { });
   } catch (e) { }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
