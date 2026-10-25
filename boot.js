@@ -5,6 +5,51 @@
   var loader = $('loader'), barFill = $('bar-fill'), loadText = $('load-text');
   var failBox = $('fail'), failText = $('fail-text'), rotateBox = $('rotate'), toast = $('toast');
   var canvas = $('unity-canvas');
+
+  // Ограничитель частоты кадров. Unity в браузере рисует кадр на каждый кадр экрана, а на телефонах и мониторах с 90–144 Гц это лишний нагрев
+  // и 100% видеокарты. Игра выставляет предел (window.ZASLON_MAXFPS, 0 — без предела). Следующий кадр главного цикла ждёт по таймеру до нужного
+  // момента и только потом выравнивается одним rAF (пропускать «пустые» rAF нельзя: так Unity получал вдвое меньше кадров, а в Android WebView
+  // подача кадров рушилась до 1 в секунду). Проверено в Chrome на компьютере: ровно 30 / 60 кадров при пределе 30 / 60.
+  (function () {
+    var raf = window.requestAnimationFrame.bind(window), next = 0;
+    window.ZASLON_MAXFPS = 0;
+    // Пропуск кадров проверен только в браузере на компьютере: в приложении для Android предел ставит сама система (частота экрана),
+    // а в мобильных браузерах он ломал подачу кадров, поэтому там ограничитель выключен.
+    var limiterOk = !window.ZaslonAndroid && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    window.requestAnimationFrame = function (cb) {
+      // ограничиваем ТОЛЬКО главный цикл Unity: рядом крутится второй rAF-цикл самого загрузчика (замер частоты), его нельзя трогать
+      var m = limiterOk && cb && cb.name === 'Browser_mainLoop_runner' ? window.ZASLON_MAXFPS : 0;
+      var run = function (t) {
+        if (m > 0) { var period = 1000 / m; next = (t - next > period) ? t + period : next + period; }
+        cb(t);
+      };
+      if (m > 0) {
+        var wait = next - performance.now() - 5;
+        if (wait > 1) return setTimeout(function () { raf(run); }, wait);
+      }
+      return raf(run);
+    };
+    // Частота экрана: меряем интервалы настоящего rAF (ограничитель на них не влияет) и держим максимум оценок. Тяжёлый кадр игры растягивает
+    // интервалы и занижает оценку, поэтому занижение не запоминаем: берём наибольшее значение, а округляем до обычных частот экранов.
+    window.ZASLON_REFRESH = 60;
+    (function () {
+      var ds = [], lt = 0, n = 0, rates = [30, 45, 48, 50, 60, 72, 75, 90, 100, 120, 144, 165, 180, 240];
+      raf(function tick(t) {
+        if (lt) { ds.push(t - lt); if (ds.length > 90) ds.shift(); }
+        lt = t;
+        if (++n % 45 === 0 && ds.length >= 30) {
+          var s = ds.slice().sort(function (a, b) { return a - b; });
+          var p = s[Math.floor(s.length * 0.25)];
+          if (p > 3 && p < 40) {
+            var hz = 1000 / p, best = Math.round(hz);
+            for (var i = 0; i < rates.length; i++) if (Math.abs(hz - rates[i]) / rates[i] < 0.06) { best = rates[i]; break; }
+            if (best > window.ZASLON_REFRESH || n === 45) window.ZASLON_REFRESH = best;
+          }
+        }
+        raf(tick);
+      });
+    })();
+  })();
   var started = false, toastTimer = 0;
 
   function isMobile() {
