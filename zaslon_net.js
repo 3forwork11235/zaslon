@@ -28,6 +28,7 @@
     out[0] = type;
     out[1] = cid & 255; out[2] = (cid >> 8) & 255; out[3] = (cid >> 16) & 255; out[4] = (cid >> 24) & 255;
     out.set(p, 5);
+    if (root.ZN_SINK) { root.ZN_SINK(out); return; }          // в приложении для ПК события уходят в игру сразу, очередь опроса не нужна
     Q.push(out);
   }
   function toU8(d) {
